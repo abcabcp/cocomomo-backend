@@ -26,15 +26,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.1.1
         version: 11.1.1(@nestjs/common@11.1.1(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.1)
-      '@nestjs/swagger':
-        specifier: ^11.2.0
-        version: 11.2.0(@nestjs/common@11.1.1(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.1)(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)
       '@nestjs/typeorm':
         specifier: ^11.0.0
         version: 11.0.0(@nestjs/common@11.1.1(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.24(better-sqlite3@11.10.0)(pg@8.16.0)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2(@swc/core@1.11.24)(@types/node@22.15.19)(typescript@5.8.3)))
-      better-sqlite3:
-        specifier: ^11.10.0
-        version: 11.10.0
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -62,9 +56,6 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
-      swagger-ui-express:
-        specifier: ^5.0.1
-        version: 5.0.1(express@5.1.0)
       typeorm:
         specifier: ^0.3.24
         version: 0.3.24(better-sqlite3@11.10.0)(pg@8.16.0)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2(@swc/core@1.11.24)(@types/node@22.15.19)(typescript@5.8.3))
@@ -78,6 +69,9 @@ importers:
       '@nestjs/schematics':
         specifier: ^11.0.0
         version: 11.0.5(chokidar@4.0.3)(typescript@5.8.3)
+      '@nestjs/swagger':
+        specifier: ^11.2.0
+        version: 11.2.0(@nestjs/common@11.1.1(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.1)(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)
       '@nestjs/testing':
         specifier: ^11.0.1
         version: 11.1.1(@nestjs/common@11.1.1(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.1)(@nestjs/platform-express@11.1.1)
@@ -102,6 +96,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.3
+      better-sqlite3:
+        specifier: ^11.10.0
+        version: 11.10.0
       globals:
         specifier: ^16.0.0
         version: 16.1.0
@@ -114,6 +111,9 @@ importers:
       supertest:
         specifier: ^7.0.0
         version: 7.1.1
+      swagger-ui-express:
+        specifier: ^5.0.1
+        version: 5.0.1(express@5.1.0)
       ts-jest:
         specifier: ^29.2.5
         version: 29.3.4(@babel/core@7.27.1)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.1))(jest@29.7.0(@types/node@22.15.19)(ts-node@10.9.2(@swc/core@1.11.24)(@types/node@22.15.19)(typescript@5.8.3)))(typescript@5.8.3)
@@ -3438,9 +3438,6 @@ packages:
 
   swagger-ui-dist@5.21.0:
     resolution: {integrity: sha512-E0K3AB6HvQd8yQNSMR7eE5bk+323AUxjtCz/4ZNKiahOlPhPJxqn3UPIGs00cyY/dhrTDJ61L7C/a8u6zhGrZg==}
-
-  swagger-ui-dist@5.24.0:
-    resolution: {integrity: sha512-okwN8vf14TOgBTUyGgCXEAoHnrwwp/042dC00B3kPu2OAe9zD75BtSbLlgAK1Y5e3csJhs+AdnIxJYZN9uvptg==}
 
   swagger-ui-express@5.0.1:
     resolution: {integrity: sha512-SrNU3RiBGTLLmFU8GIJdOdanJTl4TOmT27tt3bWWHppqYmAZ6IDuEuBvMU6nZq0zLEe6b/1rACXCgLZqO6ZfrA==}
@@ -7597,14 +7594,10 @@ snapshots:
     dependencies:
       '@scarf/scarf': 1.4.0
 
-  swagger-ui-dist@5.24.0:
-    dependencies:
-      '@scarf/scarf': 1.4.0
-
   swagger-ui-express@5.0.1(express@5.1.0):
     dependencies:
       express: 5.1.0
-      swagger-ui-dist: 5.24.0
+      swagger-ui-dist: 5.21.0
 
   symbol-observable@4.0.0: {}
 
