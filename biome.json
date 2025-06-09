@@ -1,0 +1,44 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.7.1/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error"
+      },
+      "suspicious": {
+        "noConsoleLog": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useImportType": "off"
+      },
+      "complexity": {
+        "noBannedTypes": "off"
+      }
+    },
+    "ignore": ["**/*.decorator.ts", "**/*.dto.ts", "**/*.entity.ts", "**/main.ts"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "files": {
+    "ignore": ["node_modules/**", "dist/**"]
+  }
+}
