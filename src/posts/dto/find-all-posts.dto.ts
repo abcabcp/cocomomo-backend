@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsArray, IsString, IsNumber, Min } from "class-validator";
 import { Transform, Type } from "class-transformer";
+import { Post } from "../entities/post.entity";
 
 export class FindAllPostsDto {
   @ApiProperty({
@@ -58,9 +59,21 @@ export class FindAllPostsDto {
 export class PostsResponseDto {
   @ApiProperty({
     description: "게시글 목록",
-    type: "array",
+    type: [Post],
+    items: {
+      type: "object",
+      properties: {
+        id: { type: "number", example: 1 },
+        title: { type: "string", example: "게시글 제목" },
+        content: { type: "string", example: "게시글 내용" },
+        thumbnailUrl: { type: "string", example: "https://example.com/image.jpg", nullable: true },
+        tags: { type: "array", items: { type: "string" }, example: ["태그1", "태그2"] },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+      },
+    },
   })
-  list: any[];
+  list: Post[];
 
   @ApiProperty({
     description: "전체 게시글 수",

@@ -1,44 +1,50 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  NotFoundException,
+  Param,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
-  NotFoundException,
-  BadRequestException,
-  HttpCode,
-  UseInterceptors,
-  UploadedFile,
   Query,
+  UploadedFile,
   UseGuards,
-  Request,
+  UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { PostsService } from "./posts.service";
-import { Post as PostEntity } from "./entities/post.entity";
-import { CloudinaryService } from "../common/cloudinary/cloudinary.service";
-import { CreatePostDto } from "./dto/create-post.dto";
-import { UpdatePostDto } from "./dto/update-post.dto";
-import { FindAllPostsDto, PostsResponseDto } from "./dto/find-all-posts.dto";
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiConsumes,
-  ApiBody,
-  ApiQuery,
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
 } from "@nestjs/swagger";
+import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { Roles } from "../auth/decorators/roles.decorator";
+import { CloudinaryService } from "../common/cloudinary/cloudinary.service";
+import {
+  ApiBadRequestDecorator,
+  ApiErrorResponseDecorator,
+  ApiNotFoundDecorator,
+  ApiOkResponseDecorator,
+} from "../common/decorators/api-responses.decorator";
 import { UserRole } from "../users/entities/user.entity";
+import { CreatePostDto } from "./dto/create-post.dto";
+import { FindAllPostsDto, PostsResponseDto } from "./dto/find-all-posts.dto";
+import { UpdatePostDto } from "./dto/update-post.dto";
+import { Post as PostEntity } from "./entities/post.entity";
+import { PostsService } from "./posts.service";
 
-@ApiTags("게시글")
+@ApiTags("posts")
 @Controller("posts")
+@ApiErrorResponseDecorator()
 export class PostsController {
   constructor(
     private readonly postsService: PostsService,
@@ -49,11 +55,11 @@ export class PostsController {
     summary: "게시글 목록 조회",
     description: "게시글 목록을 조회합니다. 검색, 필터링, 페이징 기능을 제공합니다.",
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponseDecorator({
     description: "게시글 목록 및 전체 개수를 반환합니다.",
     type: PostsResponseDto,
   })
+  @ApiBadRequestDecorator("잘못된 요청 파라미터입니다.")
   @ApiQuery({ name: "searchTerm", required: false, description: "검색어 (제목, 내용)" })
   @ApiQuery({ name: "tags", required: false, description: "태그 필터 (쉼표로 구분 가능)" })
   @ApiQuery({
@@ -70,8 +76,8 @@ export class PostsController {
 
   @ApiOperation({ summary: "게시글 조회", description: "ID로 특정 게시글을 조회합니다." })
   @ApiParam({ name: "id", description: "게시글 ID", type: "number" })
-  @ApiResponse({ status: 200, description: "게시글 정보를 반환합니다.", type: PostEntity })
-  @ApiResponse({ status: 404, description: "게시글을 찾을 수 없습니다." })
+  @ApiOkResponseDecorator({ description: "게시글 정보를 반환합니다.", type: PostEntity })
+  @ApiNotFoundDecorator("게시글을 찾을 수 없습니다.")
   @Get(":id")
   async findOne(@Param("id") id: string): Promise<PostEntity> {
     try {
@@ -122,7 +128,7 @@ export class PostsController {
     },
   })
   @ApiResponse({ status: 201, description: "생성된 게시글 정보를 반환합니다.", type: PostEntity })
-  @ApiResponse({ status: 400, description: "게시글 생성에 실패했습니다." })
+  @ApiBadRequestDecorator("게시글 생성에 실패했습니다.")
   @Post()
   @UseInterceptors(FileInterceptor("thumbnail"))
   async createPost(
@@ -162,9 +168,9 @@ export class PostsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiParam({ name: "id", description: "수정할 게시글 ID", type: "number" })
-  @ApiResponse({ status: 200, description: "수정된 게시글 정보를 반환합니다.", type: PostEntity })
-  @ApiResponse({ status: 400, description: "게시글 수정에 실패했습니다." })
-  @ApiResponse({ status: 404, description: "게시글을 찾을 수 없습니다." })
+  @ApiOkResponseDecorator({ description: "수정된 게시글 정보를 반환합니다.", type: PostEntity })
+  @ApiBadRequestDecorator("게시글 수정에 실패했습니다.")
+  @ApiNotFoundDecorator("게시글을 찾을 수 없습니다.")
   @Put(":id")
   @UseInterceptors(FileInterceptor("thumbnail"))
   async updatePost(
@@ -209,8 +215,8 @@ export class PostsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiResponse({ status: 204, description: "게시글이 성공적으로 삭제되었습니다." })
-  @ApiResponse({ status: 400, description: "게시글 삭제에 실패했습니다." })
-  @ApiResponse({ status: 404, description: "게시글을 찾을 수 없습니다." })
+  @ApiBadRequestDecorator("게시글 삭제에 실패했습니다.")
+  @ApiNotFoundDecorator("게시글을 찾을 수 없습니다.")
   @Delete(":id")
   @HttpCode(204)
   async deletePost(@Param("id") id: string): Promise<void> {
@@ -255,7 +261,7 @@ export class PostsController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: "이미지 업로드 실패 또는 유효하지 않은 이미지 형식" })
+  @ApiBadRequestDecorator("이미지 업로드 실패 또는 유효하지 않은 이미지 형식")
   @Post("upload-image")
   @UseInterceptors(FileInterceptor("image"))
   async uploadContentImage(@UploadedFile() file: Express.Multer.File): Promise<{ url: string }> {

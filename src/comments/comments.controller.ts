@@ -1,15 +1,24 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { Roles } from "../auth/decorators/roles.decorator";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { ERROR_MESSAGES } from "../common/constants/error-codes.constants";
+import {
+  ApiAuthErrorsDecorator,
+  ApiBadRequestDecorator,
+  ApiCreatedResponseDecorator,
+  ApiNotFoundDecorator,
+  ApiOkResponseDecorator,
+} from "../common/decorators/api-responses.decorator";
+import { UserRole } from "../users/entities/user.entity";
 import { CommentsService } from "./comments.service";
 import { CreateCommentDto } from "./dto/create-comment.dto";
 import { UpdateCommentDto } from "./dto/update-comment.dto";
-import { Comment } from "./entities/comment.entity";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { Roles } from "../auth/decorators/roles.decorator";
-import { UserRole } from "../users/entities/user.entity";
+import { CommentResponseDto } from "./dto/comment-response.dto";
+import { DeleteCommentResponseDto } from "./dto/delete-comment-response.dto";
 
-@ApiTags("댓글")
+@ApiTags("comments")
 @Controller("comments")
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
@@ -19,10 +28,16 @@ export class CommentsController {
     description: "특정 게시글에 달린 모든 댓글을 조회합니다.",
   })
   @ApiParam({ name: "postId", description: "게시글 ID", type: "number" })
-  @ApiResponse({ status: 200, description: "댓글 목록 반환" })
+  @ApiOkResponseDecorator({
+    description: "댓글 목록 반환",
+    type: CommentResponseDto,
+    isArray: true,
+  })
+  @ApiNotFoundDecorator(ERROR_MESSAGES.POST_NOT_FOUND)
   @Get("post/:postId")
-  async findAllByPostId(@Param("postId") postId: string): Promise<Comment[]> {
-    return this.commentsService.findAllByPostId(+postId);
+  async findAllByPostId(@Param("postId") postId: string): Promise<CommentResponseDto[]> {
+    const comments = await this.commentsService.findAllByPostId(+postId);
+    return comments.map((comment) => CommentResponseDto.fromEntity(comment));
   }
 
   @ApiOperation({
@@ -30,7 +45,13 @@ export class CommentsController {
     description: "게시글에 댓글을 작성합니다. 로그인이 필요합니다.",
   })
   @ApiParam({ name: "postId", description: "게시글 ID", type: "number" })
-  @ApiResponse({ status: 201, description: "댓글 작성 성공", type: Comment })
+  @ApiCreatedResponseDecorator({
+    description: "댓글 작성 성공",
+    type: CommentResponseDto,
+  })
+  @ApiBadRequestDecorator(ERROR_MESSAGES.COMMENT_CREATE_FAILED)
+  @ApiNotFoundDecorator(ERROR_MESSAGES.POST_NOT_FOUND)
+  @ApiAuthErrorsDecorator()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
@@ -39,11 +60,12 @@ export class CommentsController {
     @Param("postId") postId: string,
     @Body() createCommentDto: CreateCommentDto,
     @Req() req,
-  ): Promise<Comment> {
+  ): Promise<CommentResponseDto> {
     const { content } = createCommentDto;
     const userId = req.user.id;
 
-    return this.commentsService.create(+postId, content, userId);
+    const comment = await this.commentsService.create(+postId, content, userId);
+    return CommentResponseDto.fromEntity(comment);
   }
 
   @ApiOperation({
@@ -51,8 +73,10 @@ export class CommentsController {
     description: "자신이 작성한 댓글을 수정합니다. 로그인이 필요합니다.",
   })
   @ApiParam({ name: "id", description: "댓글 ID", type: "number" })
-  @ApiResponse({ status: 200, description: "댓글 수정 성공", type: Comment })
-  @ApiResponse({ status: 403, description: "댓글 수정 권한이 없습니다." })
+  @ApiOkResponseDecorator({ description: "댓글 수정 성공", type: CommentResponseDto })
+  @ApiBadRequestDecorator(ERROR_MESSAGES.COMMENT_UPDATE_FAILED)
+  @ApiNotFoundDecorator(ERROR_MESSAGES.COMMENT_NOT_FOUND)
+  @ApiAuthErrorsDecorator()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
@@ -61,9 +85,10 @@ export class CommentsController {
     @Param("id") id: string,
     @Body() updateCommentDto: UpdateCommentDto,
     @Req() req,
-  ): Promise<Comment> {
+  ): Promise<CommentResponseDto> {
     const { content } = updateCommentDto;
-    return this.commentsService.update(+id, content, req.user);
+    const comment = await this.commentsService.update(+id, content, req.user);
+    return CommentResponseDto.fromEntity(comment);
   }
 
   @ApiOperation({
@@ -71,13 +96,18 @@ export class CommentsController {
     description: "자신이 작성한 댓글을 삭제합니다. 로그인이 필요합니다.",
   })
   @ApiParam({ name: "id", description: "댓글 ID", type: "number" })
-  @ApiResponse({ status: 200, description: "댓글 삭제 성공" })
-  @ApiResponse({ status: 403, description: "댓글 삭제 권한이 없습니다." })
+  @ApiOkResponseDecorator({
+    description: "댓글 삭제 성공",
+    type: DeleteCommentResponseDto,
+  })
+  @ApiBadRequestDecorator(ERROR_MESSAGES.COMMENT_DELETE_FAILED)
+  @ApiNotFoundDecorator(ERROR_MESSAGES.COMMENT_NOT_FOUND)
+  @ApiAuthErrorsDecorator()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(":id")
-  async remove(@Param("id") id: string, @Req() req): Promise<{ success: boolean }> {
+  async remove(@Param("id") id: string, @Req() req): Promise<DeleteCommentResponseDto> {
     await this.commentsService.remove(+id, req.user);
     return { success: true };
   }

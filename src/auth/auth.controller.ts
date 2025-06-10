@@ -5,7 +5,7 @@ import { ConfigService } from "@nestjs/config";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 
-@ApiTags("인증")
+@ApiTags("auth")
 @Controller("auth")
 export class AuthController {
   constructor(
