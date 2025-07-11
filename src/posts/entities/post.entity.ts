@@ -44,3 +44,8 @@ export class PostDto {
   @Column({ default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
   updatedAt: Date;
 }
+
+export class PostRemoveResponseDto {
+  @ApiProperty({ description: "삭제된 게시글 ID", example: 1 })
+  id: number;
+}

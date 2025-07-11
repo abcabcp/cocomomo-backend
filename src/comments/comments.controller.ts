@@ -9,11 +9,11 @@ import {
   ApiNotFoundDecorator,
 } from "../common/decorators/api-responses.decorator";
 import { ApiSuccessResponse } from "../common/decorators/api-swagger.decorator";
-import { UserRole } from "../users/entities/user.entity";
+import { User, UserRole } from "../users/entities/user.entity";
 import { CommentsService } from "./comments.service";
 import { CreateCommentDto } from "./dto/create-comment.dto";
 import { UpdateCommentDto } from "./dto/update-comment.dto";
-import { CommentResponseDto } from "./dto/comment-response.dto";
+import { CommentRemoveResponseDto, CommentResponseDto } from "./dto/comment-response.dto";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { Comment } from "./entities/comment.entity";
 
@@ -78,7 +78,7 @@ export class CommentsController {
 
   @ApiOperation({ summary: "댓글 삭제" })
   @ApiParam({ name: "id", type: "number" })
-  @ApiSuccessResponse(Comment)
+  @ApiSuccessResponse(CommentRemoveResponseDto)
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
@@ -86,7 +86,11 @@ export class CommentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(":id")
-  async delete(@Param("id") id: string, @Req() req): Promise<void> {
-    await this.commentsService.remove(+id, req.user.id);
+  async delete(
+    @Param("id") id: string,
+    @Req() req: Request & { user: User },
+  ): Promise<CommentRemoveResponseDto> {
+    await this.commentsService.remove(+id, req.user);
+    return { id: +id };
   }
 }

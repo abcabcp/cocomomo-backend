@@ -5,6 +5,7 @@ import { Comment } from "./entities/comment.entity";
 import { PostsService } from "../posts/posts.service";
 import { UsersService } from "../users/users.service";
 import { User, UserRole } from "../users/entities/user.entity";
+import { CommentRemoveResponseDto } from "./dto/comment-response.dto";
 
 @Injectable()
 export class CommentsService {
@@ -60,13 +61,12 @@ export class CommentsService {
     return this.commentsRepository.save(comment);
   }
 
-  async remove(id: number, currentUser: User): Promise<void> {
+  async remove(id: number, currentUser: User): Promise<CommentRemoveResponseDto> {
     const comment = await this.findById(id);
-
     if (comment.userId !== currentUser.id && currentUser.role !== UserRole.ADMIN) {
       throw new ForbiddenException("작성자 또는 관리자만 댓글을 삭제할 수 있습니다.");
     }
-
     await this.commentsRepository.remove(comment);
+    return { id: comment.id };
   }
 }

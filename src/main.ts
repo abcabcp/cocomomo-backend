@@ -6,9 +6,10 @@ import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
 import { User } from "./users/entities/user.entity";
-import { PostDto } from "./posts/entities/post.entity";
+import { PostDto, PostRemoveResponseDto } from "./posts/entities/post.entity";
 import { Comment } from "./comments/entities/comment.entity";
-import { CommentResponseDto } from "./comments/dto/comment-response.dto";
+import { CommentRemoveResponseDto, CommentResponseDto } from "./comments/dto/comment-response.dto";
+import { PostsRequestDto, PostsResponseDto } from "./posts/dto/find-all-posts.dto";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -41,7 +42,16 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     operationIdFactory: (controllerKey, methodKey) =>
       `${methodKey}${controllerKey.replace("Controller", "")}`,
-    extraModels: [User, PostDto, Comment, CommentResponseDto],
+    extraModels: [
+      User,
+      PostDto,
+      Comment,
+      CommentResponseDto,
+      CommentRemoveResponseDto,
+      PostRemoveResponseDto,
+      PostsResponseDto,
+      PostsRequestDto,
+    ],
   });
 
   SwaggerModule.setup("swagger", app, document, {

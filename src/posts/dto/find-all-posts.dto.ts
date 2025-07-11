@@ -82,3 +82,14 @@ export class PostsResponseDto {
   })
   totalCount: number;
 }
+
+export class PostsRequestDto {
+  @ApiProperty({ description: "현재 페이지", type: Number })
+  page: number;
+  @ApiProperty({ description: "페이지당 게시글 수", type: Number })
+  limit: number;
+  @ApiProperty({ description: "검색어", type: String })
+  searchTerm?: string;
+  @ApiProperty({ description: "태그", type: String })
+  tags?: string;
+}

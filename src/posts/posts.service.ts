@@ -1,8 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { FindAllPostsDto, PostsResponseDto } from "./dto/find-all-posts.dto";
-import { PostDto } from "./entities/post.entity";
+import { PostDto, PostRemoveResponseDto } from "./entities/post.entity";
+import { User, UserRole } from "src/users/entities/user.entity";
+import { PostsResponseDto } from "./dto/find-all-posts.dto";
 
 @Injectable()
 export class PostsService {
@@ -15,12 +21,12 @@ export class PostsService {
     page: number,
     limit: number,
     searchTerm?: string,
-    tags?: string[],
-  ): Promise<{ list: PostDto[]; totalCount: number }> {
+    tags?: string,
+  ): Promise<PostsResponseDto> {
     const queryBuilder = this.postsRepository.createQueryBuilder("post");
 
     if (tags && tags.length > 0) {
-      tags.forEach((tag, index) => {
+      tags.split(",").forEach((tag, index) => {
         queryBuilder.andWhere(`post.tags LIKE :tag${index}`, {
           [`tag${index}`]: `%${tag}%`,
         });
@@ -77,8 +83,11 @@ export class PostsService {
     return this.postsRepository.save(existingPost);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.findOne(id);
+  async remove(id: number, currentUser: User): Promise<PostRemoveResponseDto> {
+    if (currentUser.role !== UserRole.ADMIN) {
+      throw new ForbiddenException("관리자만 게시글을 삭제할 수 있습니다.");
+    }
     await this.postsRepository.delete(id);
+    return { id: id };
   }
 }

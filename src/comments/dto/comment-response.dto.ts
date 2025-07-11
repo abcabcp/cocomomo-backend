@@ -45,3 +45,8 @@ export class CommentResponseDto {
     return dto;
   }
 }
+
+export class CommentRemoveResponseDto {
+  @ApiProperty({ description: "삭제 코멘트 id", example: 1 })
+  id: number;
+}

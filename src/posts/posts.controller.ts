@@ -25,9 +25,9 @@ import { User, UserRole } from "../users/entities/user.entity";
 import { PostsService } from "./posts.service";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { UpdatePostDto } from "./dto/update-post.dto";
-import { PostDto } from "./entities/post.entity";
-import { PaginatedResponseDto } from "src/common/dto/paginated-response.dto";
+import { PostDto, PostRemoveResponseDto } from "./entities/post.entity";
 import { Roles } from "src/auth/decorators/roles.decorator";
+import { PostsResponseDto } from "./dto/find-all-posts.dto";
 
 @ApiTags("posts")
 @Controller("posts")
@@ -35,22 +35,22 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @ApiOperation({ summary: "게시글 목록 조회" })
+  @ApiSuccessResponse(PostsResponseDto)
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
+  @ApiQuery({ name: "searchTerm", required: false, type: String })
+  @ApiQuery({ name: "tags", required: false, type: String })
   @Get()
   async findAll(
     @Query("page") page = 1,
     @Query("limit") limit = 10,
-  ): Promise<PaginatedResponseDto<PostDto>> {
-    const { list, totalCount } = await this.postsService.findAll(page, limit);
+    @Query("searchTerm") searchTerm = "",
+    @Query("tags") tags = "",
+  ): Promise<PostsResponseDto> {
+    const { list, totalCount } = await this.postsService.findAll(page, limit, searchTerm, tags);
     return {
-      statusCode: 200,
-      success: true,
-      data: list,
-      total: totalCount,
-      page,
-      limit,
-      timestamp: new Date().toISOString(),
+      list,
+      totalCount,
     };
   }
 
@@ -99,10 +99,7 @@ export class PostsController {
   }
 
   @ApiOperation({ summary: "게시글 삭제" })
-  @ApiSuccessResponse({
-    description: "삭제 완료되었습니다.",
-    type: null,
-  })
+  @ApiSuccessResponse(PostRemoveResponseDto)
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
@@ -110,7 +107,8 @@ export class PostsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(":id")
-  async remove(@Param("id") id: string) {
-    await this.postsService.remove(+id);
+  async remove(@Param("id") id: string, @Req() req: Request & { user: User }) {
+    await this.postsService.remove(+id, req.user);
+    return { id: +id };
   }
 }
