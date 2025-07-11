@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsArray, IsString, IsNumber, Min } from "class-validator";
 import { Transform, Type } from "class-transformer";
-import { Post } from "../entities/post.entity";
+import { PostDto } from "../entities/post.entity";
 
 export class FindAllPostsDto {
   @ApiProperty({
@@ -59,7 +59,7 @@ export class FindAllPostsDto {
 export class PostsResponseDto {
   @ApiProperty({
     description: "게시글 목록",
-    type: [Post],
+    type: [PostDto],
     items: {
       type: "object",
       properties: {
@@ -73,7 +73,7 @@ export class PostsResponseDto {
       },
     },
   })
-  list: Post[];
+  list: PostDto[];
 
   @ApiProperty({
     description: "전체 게시글 수",

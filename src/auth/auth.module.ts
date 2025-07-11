@@ -1,30 +1,39 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { UsersModule } from "../users/users.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-import { UsersModule } from "../users/users.module";
-import { JwtStrategy } from "./strategies/jwt.strategy";
-import { GithubStrategy } from "./strategies/github.strategy";
+import { GithubStrategy } from "./github.strategy";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>("JWT_SECRET"),
-        signOptions: {
-          expiresIn: "30d",
-        },
+      useFactory: async (config: ConfigService) => ({
+        secret: config.get("JWT_SECRET"),
+        signOptions: { expiresIn: "30d" },
       }),
       inject: [ConfigService],
     }),
   ],
+  providers: [
+    AuthService,
+    GithubStrategy,
+    JwtAuthGuard,
+    {
+      provide: "STRATEGIES",
+      useFactory: (github: GithubStrategy) => ({
+        github,
+      }),
+      inject: [GithubStrategy],
+    },
+  ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GithubStrategy],
-  exports: [AuthService, JwtStrategy, PassportModule],
+  exports: [AuthService, JwtModule, PassportModule, JwtAuthGuard],
 })
 export class AuthModule {}

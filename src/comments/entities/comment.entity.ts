@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "../../users/entities/user.entity";
-import { Post } from "../../posts/entities/post.entity";
+import { PostDto } from "../../posts/entities/post.entity";
 
 @Entity()
 export class Comment {
@@ -25,9 +25,9 @@ export class Comment {
   @JoinColumn({ name: "userId" })
   user: User;
 
-  @ManyToOne(() => Post, { onDelete: "CASCADE" })
+  @ManyToOne(() => PostDto, { onDelete: "CASCADE" })
   @JoinColumn({ name: "postId" })
-  post: Post;
+  post: PostDto;
 
   @ApiProperty({ description: "댓글 생성 시간", example: "2025-06-09T13:30:51+09:00" })
   @Column({ default: () => "CURRENT_TIMESTAMP" })

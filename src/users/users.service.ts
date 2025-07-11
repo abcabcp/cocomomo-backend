@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "./entities/user.entity";
+import { User, UserRole } from "./entities/user.entity";
 
 @Injectable()
 export class UsersService {
@@ -9,10 +9,6 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
   ) {}
-
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
-  }
 
   async count(): Promise<number> {
     return this.usersRepository.count();
@@ -26,23 +22,41 @@ export class UsersService {
     return user;
   }
 
-  async findByGithubId(githubId: number): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { githubId } });
-  }
+  async validateForGithubLogin(profile: {
+    platformId: number;
+    name: string;
+    email: string;
+    image?: string;
+  }): Promise<User> {
+    const { platformId, name, email, image } = profile;
 
-  async create(userData: Partial<User>): Promise<User> {
-    const user = this.usersRepository.create(userData);
-    return this.usersRepository.save(user);
-  }
+    let user = await this.usersRepository.findOne({
+      where: { platformId },
+      select: ["id", "platformId", "name", "email", "image", "role"],
+    });
 
+    if (!user) {
+      user = this.usersRepository.create({
+        platformId,
+        name,
+        email,
+        image,
+        role: (await this.count()) === 0 ? UserRole.ADMIN : UserRole.USER,
+      });
+    } else {
+      if (user.name !== name || user.email !== email || user.image !== image) {
+        user.name = name;
+        user.email = email;
+        user.image = image;
+      }
+    }
+
+    await this.usersRepository.save(user);
+    return user;
+  }
   async update(id: number, userData: Partial<User>): Promise<User> {
     const user = await this.findById(id);
     Object.assign(user, userData);
     return this.usersRepository.save(user);
-  }
-
-  async remove(id: number): Promise<void> {
-    const user = await this.findById(id);
-    await this.usersRepository.remove(user);
   }
 }

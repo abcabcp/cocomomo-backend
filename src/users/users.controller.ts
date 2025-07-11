@@ -1,33 +1,58 @@
-import { Controller, Get, Param, UseGuards, Req } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
+import { Controller, Get, Req, UnauthorizedException, UseGuards } from "@nestjs/common";
+
+import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "@nestjs/passport";
-import { UsersService } from "./users.service";
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { ApiUnauthorizedDecorator } from "src/common/decorators/api-responses.decorator";
 import { User } from "./entities/user.entity";
+import { UsersService } from "./users.service";
+import { ApiSuccessResponse } from "src/common/decorators/api-swagger.decorator";
 
 @ApiTags("users")
 @Controller("users")
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
-
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
   @ApiOperation({
-    summary: "현재 사용자 정보 조회",
-    description: "현재 로그인한 사용자의 정보를 조회합니다.",
+    summary: "현재 사용자 GitHub 정보 조회",
+    description: "액세스 토큰으로 인증된 사용자의 GitHub 정보를 반환합니다.",
   })
-  @ApiResponse({ status: 200, description: "사용자 정보 조회 성공", type: User })
   @ApiBearerAuth()
   @UseGuards(AuthGuard("jwt"))
   @Get("profile")
-  getProfile(@Req() req): User {
-    return req.user;
+  async getProfile(githubToken: string): Promise<User> {
+    const response = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+    if (!response.ok) {
+      throw new UnauthorizedException("GitHub 프로필을 가져오지 못했습니다");
+    }
+
+    const profile = await response.json();
+    const name = profile.name || profile.login || `user_${profile.id}`;
+
+    return {
+      id: profile.id,
+      name,
+      email: profile.email || "",
+      platformId: profile.id,
+      role: profile.role,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+    };
   }
 
-  @ApiOperation({
-    summary: "ID로 사용자 조회",
-    description: "특정 ID를 가진 사용자 정보를 조회합니다.",
-  })
-  @ApiResponse({ status: 200, description: "사용자 정보 조회 성공", type: User })
-  @Get(":id")
-  async findOne(@Param("id") id: string): Promise<User> {
-    return this.usersService.findById(+id);
+  @ApiSuccessResponse(User)
+  @ApiUnauthorizedDecorator()
+  @Get("me")
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@Req() req: Request & { user: User }): Promise<User> {
+    return this.usersService.findById(req.user.id);
   }
 }

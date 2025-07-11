@@ -1,23 +1,26 @@
-import {
-  Injectable,
-  type NestInterceptor,
-  type ExecutionContext,
-  type CallHandler,
-} from "@nestjs/common";
-import type { Observable } from "rxjs";
-import { map } from "rxjs/operators";
-import { type ApiResponse, successResponse, successListResponse } from "../dto/api-response.dto";
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
+import { Observable, throwError } from "rxjs";
+import { catchError, map } from "rxjs/operators";
+import { ApiResponseDto } from "../dto/api-response.dto";
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<ApiResponse<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponseDto<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponseDto<T>> {
     return next.handle().pipe(
-      map((data) => {
-        if (Array.isArray(data)) {
-          return successListResponse(data);
-        }
-        return successResponse(data);
-      }),
+      map((data) => ({
+        statusCode: context.switchToHttp().getResponse().statusCode,
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      })),
+      catchError((err) =>
+        throwError(() => ({
+          statusCode: err.status || 500,
+          success: false,
+          data: err.message,
+          timestamp: new Date().toISOString(),
+        })),
+      ),
     );
   }
 }

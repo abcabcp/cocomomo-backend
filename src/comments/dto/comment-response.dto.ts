@@ -20,10 +20,10 @@ export class CommentResponseDto {
   @ApiProperty({ description: "댓글 수정 시간", example: "2025-06-09T13:30:51+09:00" })
   updatedAt: Date;
 
-  @ApiProperty({ description: "작성자 정보", example: { id: 1, username: "사용자" } })
+  @ApiProperty({ description: "작성자 정보", example: { id: 1, name: "사용자" } })
   user?: {
     id: number;
-    username: string;
+    name: string;
   };
 
   static fromEntity(comment: Comment): CommentResponseDto {
@@ -38,7 +38,7 @@ export class CommentResponseDto {
     if (comment.user) {
       dto.user = {
         id: comment.user.id,
-        username: comment.user.username,
+        name: comment.user.name,
       };
     }
 

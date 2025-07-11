@@ -1,24 +1,18 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-export class ApiErrorResponseDto {
-  @ApiProperty({
-    description: "에러 코드",
-    type: "number",
-    example: 400,
-  })
-  statusCode: number;
+export class ApiErrorDto {
+  @ApiProperty({ example: 400 })
+  result: number;
 
-  @ApiProperty({
-    description: "에러 메시지",
-    type: "string",
-    example: "잘못된 요청입니다",
-  })
+  @ApiProperty({ example: "에러 메시지" })
   message: string;
 
-  @ApiProperty({
-    description: "에러 타입",
-    type: "string",
-    example: "BadRequestException",
-  })
-  error?: string;
+  @ApiProperty({ example: "2023-01-01T00:00:00.000Z" })
+  timestamp: string;
+
+  @ApiProperty({ example: "/api/path", required: false })
+  path?: string;
+
+  @ApiProperty({ type: Object, required: false })
+  errors?: Record<string, string[]>;
 }

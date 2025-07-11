@@ -1,41 +1,44 @@
-import { Controller, Get, Req, Res, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
-import { Response } from "express";
-import { ConfigService } from "@nestjs/config";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { Body, Controller, Headers, Logger, Post } from "@nestjs/common";
+import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
+import {
+  ApiBadRequestDecorator,
+  ApiOkResponseDecorator,
+  ApiUnauthorizedDecorator,
+} from "src/common/decorators/api-responses.decorator";
 import { AuthService } from "./auth.service";
+import { LoginRequestDto } from "./dto/auth-request.dto";
+import { AuthResponseDto } from "./dto/auth-response.dto";
+import { ApiSuccessResponse } from "src/common/decorators/api-swagger.decorator";
 
 @ApiTags("auth")
 @Controller("auth")
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-  ) {}
+  private readonly logger = new Logger(AuthController.name);
+
+  constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({
-    summary: "GitHub 로그인 시작",
-    description: "GitHub OAuth 인증 페이지로 리다이렉트합니다.",
+    summary: "로그인 처리",
+    description: "액세스 토큰을 사용하여 사용자 인증을 처리하고 JWT 토큰을 반환합니다.",
   })
-  @Get("github")
-  @UseGuards(AuthGuard("github"))
-  githubAuth() {}
+  @ApiUnauthorizedDecorator()
+  @ApiBadRequestDecorator()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiBody({ type: LoginRequestDto })
+  @Post("login")
+  @ApiSuccessResponse(AuthResponseDto)
+  async login(@Body() loginDto: LoginRequestDto): Promise<AuthResponseDto> {
+    return this.authService.handleLogin(loginDto);
+  }
 
-  @ApiOperation({
-    summary: "GitHub 로그인 콜백",
-    description: "GitHub 인증 후 처리되는 콜백 엔드포인트입니다.",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "로그인 성공 시 프론트엔드로 리다이렉트됩니다.",
-  })
-  @Get("github/callback")
-  @UseGuards(AuthGuard("github"))
-  async githubAuthCallback(@Req() req, @Res() res: Response) {
-    const loginResult = await this.authService.login(req.user);
-    const frontendUrl = this.configService.get<string>("FRONTEND_URL");
-    const token = loginResult.accessToken;
-
-    return res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+  @Post("refresh")
+  @ApiOperation({ summary: "액세스 토큰 갱신" })
+  @ApiOkResponseDecorator({ type: AuthResponseDto })
+  @ApiUnauthorizedDecorator()
+  @ApiBadRequestDecorator()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async refreshToken(@Headers("authorization") authHeader: string) {
+    return this.authService.refreshToken(authHeader);
   }
 }

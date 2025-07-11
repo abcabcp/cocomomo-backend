@@ -12,25 +12,25 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: "GitHub ID", example: 12345678 })
-  @Column({ unique: true })
-  githubId: number;
+  @ApiProperty({ description: "플랫폼 ID", example: 12345678 })
+  @Column({ unique: true, nullable: false })
+  platformId: number;
 
-  @ApiProperty({ description: "사용자 이름", example: "username" })
-  @Column()
-  username: string;
+  @ApiProperty({ description: "사용자 이름", example: "name", required: false })
+  @Column({ nullable: true })
+  name: string;
 
   @ApiProperty({ description: "사용자 이메일", example: "user@example.com", required: false })
   @Column({ nullable: true })
   email: string;
 
   @ApiProperty({
-    description: "프로필 이미지 URL",
-    example: "https://avatars.githubusercontent.com/u/1234567",
+    description: "사용자 이미지",
+    example: "https://example.com/image.jpg",
     required: false,
   })
   @Column({ nullable: true })
-  avatarUrl: string;
+  image?: string;
 
   @ApiProperty({ description: "사용자 권한", enum: UserRole, example: UserRole.USER })
   @Column({ type: "enum", enum: UserRole, default: UserRole.USER })

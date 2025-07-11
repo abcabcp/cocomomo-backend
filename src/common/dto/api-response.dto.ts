@@ -1,34 +1,20 @@
-// 기본 응답 인터페이스
-export interface ApiResponse<T> {
-  result: number;
-  message: string;
-  data: T;
-}
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
-export function successResponse<T>(data: T): ApiResponse<T> {
-  return {
-    result: 200,
-    message: "",
-    data,
-  };
-}
+export class ApiResponseDto<T> {
+  @ApiProperty({ example: 200 })
+  statusCode: number;
 
-export function successListResponse<T>(data: T[]): ApiResponse<T[]> {
-  return {
-    result: 200,
-    message: "",
-    data,
-  };
-}
+  @ApiProperty({ example: true })
+  success: boolean;
 
-export function errorResponse<T>(
-  statusCode: number,
-  message: string,
-  data?: T,
-): ApiResponse<T | null> {
-  return {
-    result: statusCode,
-    message,
-    data: data || null,
-  };
+  @ApiProperty({
+    type: "object",
+    additionalProperties: true,
+  })
+  @Type(() => Object)
+  data?: T;
+
+  @ApiProperty({ example: "2025-07-11T11:55:00.000Z" })
+  timestamp: string;
 }

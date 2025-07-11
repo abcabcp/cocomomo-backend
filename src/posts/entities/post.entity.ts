@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 
 @Entity()
-export class Post {
+export class PostDto {
   @ApiProperty({ description: "게시글 ID (자동생성)", example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
