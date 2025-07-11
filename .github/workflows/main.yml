@@ -1,0 +1,25 @@
+name: Deploy to Oracle Cloud
+
+on: push: branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Add SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+
+      - name: Run Deployment
+        run: |
+          ssh opc@${{ secrets.OCI_INSTANCE_IP }} << 'DEPLOY'
+          cd ~/cocomomo-backend
+          git pull origin main
+          pnpm install --prod
+          [ -f .env ] || cp .env.production .env
+          pnpm run build
+          pm2 restart cocomomo-api
+          DEPLOY
