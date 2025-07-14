@@ -15,14 +15,26 @@ import { UsersModule } from "./users/users.module";
       isGlobal: true,
       envFilePath: `.env.${process.env.NODE_ENV || "development"}`,
     }),
-    TypeOrmModule.forRoot({
-      type: "postgres",
-      url: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: true,
-      },
-      entities: [`${__dirname}/**/*.entity{.ts,.js}`],
-      synchronize: process.env.NODE_ENV !== "production",
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: "postgres",
+        url: configService.get("DATABASE_URL"),
+        ssl: {
+          rejectUnauthorized: configService.get("NODE_ENV") === "production",
+        },
+        entities: [`${__dirname}/**/*.entity{.ts,.js}`],
+        synchronize: configService.get("NODE_ENV") !== "production",
+        poolSize: 10,
+        connectTimeoutMS: 10000,
+        extra: {
+          max: 10,
+          connectionTimeoutMillis: 10000,
+        },
+        logging: configService.get("NODE_ENV") !== "production",
+        schema: "public",
+      }),
     }),
     PostsModule,
     UsersModule,
