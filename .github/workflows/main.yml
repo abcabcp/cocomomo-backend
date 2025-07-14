@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Add SSH Key
         uses: webfactory/ssh-agent@v0.7.0
         with:
@@ -29,7 +28,6 @@ jobs:
           git pull origin main
           pnpm install
           NODE_OPTIONS="--max-old-space-size=4096" pnpm build
-          pnpm prune --prod
           
           if pm2 list | grep -q "cocomomo-backend"; then
             pm2 restart cocomomo-backend
