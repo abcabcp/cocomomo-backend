@@ -18,9 +18,11 @@ import { UsersModule } from "./users/users.module";
     TypeOrmModule.forRoot({
       type: "postgres",
       url: process.env.DATABASE_URL,
-      ssl: false,
+      ssl: {
+        rejectUnauthorized: true,
+      },
       entities: [`${__dirname}/**/*.entity{.ts,.js}`],
-      synchronize: true,
+      synchronize: process.env.NODE_ENV !== "production",
     }),
     PostsModule,
     UsersModule,
