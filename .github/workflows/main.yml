@@ -18,7 +18,7 @@ jobs:
       - name: Run Deployment
         run: |
           ssh -o StrictHostKeyChecking=no opc@${{ secrets.OCI_INSTANCE_IP }} << 'DEPLOY'
-          cd ~/cocomomo-backend
+          cd /root/projects/cocomomo-backend
           git pull origin main
           pnpm install --prod
           [ -f .env ] || cp .env.production .env
