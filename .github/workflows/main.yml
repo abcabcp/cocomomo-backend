@@ -27,7 +27,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no opc@$SERVER_IP << 'DEPLOY'
           cd /home/opc/cocomomo-backend
           git pull origin main
-          pnpm install --prod
+          pnpm install
+          pnpm build
           
           if pm2 list | grep -q "cocomomo-backend"; then
             pm2 restart cocomomo-backend
