@@ -16,8 +16,15 @@ jobs:
           ssh-private-key: ${{ secrets.OCI_SSH_PRIVATE_KEY }} 
 
       - name: Run Deployment
+        env:
+          SERVER_IP: ${{ secrets.OCI_INSTANCE_IP }}
         run: |
-          ssh -o StrictHostKeyChecking=no opc@${{ secrets.OCI_INSTANCE_IP }} << 'DEPLOY'
+          if [ -z "$SERVER_IP" ]; then
+            echo "Error: OCI_INSTANCE_IP is not set in GitHub Secrets"
+            exit 1
+          fi
+          
+          ssh -o StrictHostKeyChecking=no opc@$SERVER_IP << 'DEPLOY'
           cd /root/projects/cocomomo-backend
           git pull origin main
           pnpm install --prod
