@@ -8,6 +8,7 @@ import { AuthModule } from "./auth/auth.module";
 import { CommentsModule } from "./comments/comments.module";
 import { PostsModule } from "./posts/posts.module";
 import { UsersModule } from "./users/users.module";
+import { UtilsModule } from "./utils/utils.module";
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UsersModule } from "./users/users.module";
     UsersModule,
     AuthModule,
     CommentsModule,
+    UtilsModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

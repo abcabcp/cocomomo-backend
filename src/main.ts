@@ -10,6 +10,14 @@ import { PostDto, PostRemoveResponseDto } from "./posts/entities/post.entity";
 import { Comment } from "./comments/entities/comment.entity";
 import { CommentRemoveResponseDto, CommentResponseDto } from "./comments/dto/comment-response.dto";
 import { PostsRequestDto, PostsResponseDto } from "./posts/dto/find-all-posts.dto";
+import { UpdatePostDto } from "./posts/dto/update-post.dto";
+import {
+  UploadImageDto,
+  UploadImageRequestDto,
+  UploadImagesDto,
+  UploadImagesRequestDto,
+} from "./utils/dto/upload-image.dto";
+import { DeleteImageDto } from "./utils/dto/delete-image.dto";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,7 +45,15 @@ async function bootstrap() {
     .setTitle("COCOMOMO API")
     .setDescription("COCOMOMO 백엔드 API 문서")
     .setVersion("1.0")
-    .addBearerAuth()
+    .addApiKey(
+      {
+        type: "apiKey",
+        name: "access-token",
+        in: "header",
+        description: "인증을 위한 액세스 토큰을 입력하세요",
+      },
+      "access-token",
+    )
     .addServer("http://localhost:4200", "Local Development")
     .addServer("https://api.cocomomo.com", "Production")
     .build();
@@ -54,6 +70,12 @@ async function bootstrap() {
       PostRemoveResponseDto,
       PostsResponseDto,
       PostsRequestDto,
+      UpdatePostDto,
+      UploadImagesDto,
+      UploadImageDto,
+      UploadImageRequestDto,
+      UploadImagesRequestDto,
+      DeleteImageDto,
     ],
   });
 

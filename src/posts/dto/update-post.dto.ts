@@ -22,20 +22,33 @@ export class UpdatePostDto {
 
   @ApiProperty({
     description: "게시글 태그 목록",
-    example: ["수정됨", "업데이트"],
+    example: "수정됨,업데이트",
     required: false,
-    type: [String],
+    type: String,
   })
   @IsArray()
   @IsOptional()
   tags?: string[];
 
   @ApiProperty({
-    description: "썸네일 이미지 URL (파일 업로드로 자동 처리되므로 일반적으로 사용하지 않음)",
-    example: "https://res.cloudinary.com/demo/image/upload/v1123456789/sample.jpg",
+    description: "게시글 썸네일 이미지 파일",
+    type: "string",
+    format: "binary",
     required: false,
   })
-  @IsString()
   @IsOptional()
-  thumbnailUrl?: string;
+  thumbnail?: Express.Multer.File;
+}
+
+export class UpdatePostImageDto {
+  @ApiProperty({
+    description: "게시글 이미지 파일들",
+    type: "array",
+    items: {
+      type: "string",
+      format: "binary",
+    },
+  })
+  @IsOptional()
+  image?: Express.Multer.File[];
 }

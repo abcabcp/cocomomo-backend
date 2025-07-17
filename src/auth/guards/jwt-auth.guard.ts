@@ -17,7 +17,6 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify(token);
-      console.log("Token payload:", payload); // 페이로드 출력
       request.user = {
         id: payload.userId,
         platformId: payload.userId,
@@ -29,7 +28,7 @@ export class JwtAuthGuard implements CanActivate {
       } as User;
       return true;
     } catch (error) {
-      console.error("Token Verification Error:", error); // 에러 상세 출력
+      console.error("Token Verification Error:", error);
       throw new UnauthorizedException("Invalid token");
     }
   }

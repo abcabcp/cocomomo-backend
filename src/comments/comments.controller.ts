@@ -1,21 +1,20 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiParam, ApiSecurity, ApiTags } from "@nestjs/swagger";
+import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import {
-  ApiUnauthorizedDecorator,
-  ApiForbiddenDecorator,
   ApiBadRequestDecorator,
+  ApiForbiddenDecorator,
   ApiNotFoundDecorator,
+  ApiUnauthorizedDecorator,
 } from "../common/decorators/api-responses.decorator";
 import { ApiSuccessResponse } from "../common/decorators/api-swagger.decorator";
 import { User, UserRole } from "../users/entities/user.entity";
 import { CommentsService } from "./comments.service";
+import { CommentRemoveResponseDto, CommentResponseDto } from "./dto/comment-response.dto";
 import { CreateCommentDto } from "./dto/create-comment.dto";
 import { UpdateCommentDto } from "./dto/update-comment.dto";
-import { CommentRemoveResponseDto, CommentResponseDto } from "./dto/comment-response.dto";
-import { Roles } from "../auth/decorators/roles.decorator";
-import { Comment } from "./entities/comment.entity";
 
 @ApiTags("comments")
 @Controller("comments")
@@ -39,7 +38,7 @@ export class CommentsController {
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Post("post/:postId")
@@ -63,7 +62,7 @@ export class CommentsController {
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Put(":id")
@@ -82,7 +81,7 @@ export class CommentsController {
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(":id")

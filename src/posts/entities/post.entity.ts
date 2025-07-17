@@ -29,9 +29,9 @@ export class PostDto {
 
   @ApiProperty({
     description: "게시글 태그 목록",
-    example: ["일상", "여행", "취미"],
+    example: "일상,여행,취미",
     required: false,
-    type: [String],
+    type: String,
   })
   @Column("simple-array", { nullable: true })
   tags: string[];

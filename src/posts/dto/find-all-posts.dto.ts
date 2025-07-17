@@ -16,14 +16,13 @@ export class FindAllPostsDto {
   @ApiProperty({
     description: "태그 목록으로 필터링 (복수 가능)",
     required: false,
-    type: [String],
-    example: ["태그1", "태그2"],
+    type: String,
+    example: "태그1,태그2",
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   @Transform(({ value }) => {
-    // 문자열로 들어온 경우 배열로 변환
     if (typeof value === "string") {
       return value.split(",").map((tag) => tag.trim());
     }
@@ -67,7 +66,7 @@ export class PostsResponseDto {
         title: { type: "string", example: "게시글 제목" },
         content: { type: "string", example: "게시글 내용" },
         thumbnailUrl: { type: "string", example: "https://example.com/image.jpg", nullable: true },
-        tags: { type: "array", items: { type: "string" }, example: ["태그1", "태그2"] },
+        tags: { type: "array", items: { type: "string" }, example: "태그1,태그2" },
         createdAt: { type: "string", format: "date-time" },
         updatedAt: { type: "string", format: "date-time" },
       },

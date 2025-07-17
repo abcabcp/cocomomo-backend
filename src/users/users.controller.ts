@@ -2,7 +2,7 @@ import { Controller, Get, Req, UnauthorizedException, UseGuards } from "@nestjs/
 
 import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "@nestjs/passport";
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiSecurity, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { ApiUnauthorizedDecorator } from "src/common/decorators/api-responses.decorator";
 import { User } from "./entities/user.entity";
@@ -20,7 +20,7 @@ export class UsersController {
     summary: "현재 사용자 GitHub 정보 조회",
     description: "액세스 토큰으로 인증된 사용자의 GitHub 정보를 반환합니다.",
   })
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(AuthGuard("jwt"))
   @Get("profile")
   async getProfile(githubToken: string): Promise<User> {
@@ -52,6 +52,7 @@ export class UsersController {
   @ApiUnauthorizedDecorator()
   @Get("me")
   @UseGuards(JwtAuthGuard)
+  @ApiSecurity("access-token")
   async getCurrentUser(@Req() req: Request & { user: User }): Promise<User> {
     return this.usersService.findById(req.user.id);
   }

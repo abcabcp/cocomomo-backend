@@ -18,11 +18,18 @@ export class CreatePostDto {
 
   @ApiProperty({
     description: "게시글 태그 목록",
-    example: ["일상", "여행", "취미"],
+    example: "일상,여행,취미",
     required: false,
-    type: [String],
+    type: String,
   })
-  @IsArray()
   @IsOptional()
   tags?: string[];
+  @ApiProperty({
+    description: "게시글 썸네일 이미지 파일",
+    type: "string",
+    format: "binary",
+    required: false,
+  })
+  @IsOptional()
+  thumbnail?: Express.Multer.File;
 }

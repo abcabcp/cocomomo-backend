@@ -1,38 +1,46 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Param,
-  Put,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Post,
+  Put,
   Query,
   Req,
-  UseGuards,
   UnauthorizedException,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiConsumes, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from "@nestjs/swagger";
+import * as express from "express";
+import { Roles } from "src/auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { CloudinaryService } from "../common/cloudinary/cloudinary.service";
 import {
   ApiBadRequestDecorator,
-  ApiUnauthorizedDecorator,
   ApiForbiddenDecorator,
   ApiNotFoundDecorator,
+  ApiUnauthorizedDecorator,
 } from "../common/decorators/api-responses.decorator";
 import { ApiSuccessResponse } from "../common/decorators/api-swagger.decorator";
 import { User, UserRole } from "../users/entities/user.entity";
-import { PostsService } from "./posts.service";
 import { CreatePostDto } from "./dto/create-post.dto";
+import { PostsResponseDto } from "./dto/find-all-posts.dto";
 import { UpdatePostDto } from "./dto/update-post.dto";
 import { PostDto, PostRemoveResponseDto } from "./entities/post.entity";
-import { Roles } from "src/auth/decorators/roles.decorator";
-import { PostsResponseDto } from "./dto/find-all-posts.dto";
+import { PostsService } from "./posts.service";
 
 @ApiTags("posts")
 @Controller("posts")
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @ApiOperation({ summary: "게시글 목록 조회" })
   @ApiSuccessResponse(PostsResponseDto)
@@ -67,20 +75,29 @@ export class PostsController {
   @ApiBadRequestDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.USER, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   @Post()
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("thumbnail"))
   async create(
     @Body() createPostDto: CreatePostDto,
-    @Req() req: Request & { user: User },
+    @Req() req: express.Request & { user: User },
+    @UploadedFile() thumbnail?: Express.Multer.File,
   ): Promise<PostDto> {
     if (!req.user?.id) {
       throw new UnauthorizedException("User not authenticated");
     }
 
+    let thumbnailUrl: string | undefined;
+    if (thumbnail) {
+      thumbnailUrl = await this.cloudinaryService.uploadImage(thumbnail);
+    }
+
     return this.postsService.create({
       ...createPostDto,
+      thumbnailUrl,
     });
   }
 
@@ -90,12 +107,26 @@ export class PostsController {
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.USER, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   @Put(":id")
-  async update(@Param("id") id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.update(+id, updatePostDto);
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("thumbnail"))
+  async update(
+    @Param("id") id: string,
+    @Body() updatePostDto: UpdatePostDto,
+    @UploadedFile() thumbnail?: Express.Multer.File,
+  ) {
+    let thumbnailUrl: string | undefined;
+    if (thumbnail) {
+      thumbnailUrl = await this.cloudinaryService.uploadImage(thumbnail);
+    }
+
+    return this.postsService.update(+id, {
+      ...updatePostDto,
+      thumbnailUrl,
+    });
   }
 
   @ApiOperation({ summary: "게시글 삭제" })
@@ -103,11 +134,11 @@ export class PostsController {
   @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
   @ApiForbiddenDecorator()
-  @ApiBearerAuth()
+  @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.USER, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   @Delete(":id")
-  async remove(@Param("id") id: string, @Req() req: Request & { user: User }) {
+  async remove(@Param("id") id: string, @Req() req: express.Request & { user: User }) {
     await this.postsService.remove(+id, req.user);
     return { id: +id };
   }

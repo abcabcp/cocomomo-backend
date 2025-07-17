@@ -9,12 +9,14 @@ import { Repository } from "typeorm";
 import { PostDto, PostRemoveResponseDto } from "./entities/post.entity";
 import { User, UserRole } from "src/users/entities/user.entity";
 import { PostsResponseDto } from "./dto/find-all-posts.dto";
+import { CloudinaryService } from "src/common/cloudinary/cloudinary.service";
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectRepository(PostDto)
     private postsRepository: Repository<PostDto>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async findAll(
@@ -24,7 +26,6 @@ export class PostsService {
     tags?: string,
   ): Promise<PostsResponseDto> {
     const queryBuilder = this.postsRepository.createQueryBuilder("post");
-
     if (tags && tags.length > 0) {
       tags.split(",").forEach((tag, index) => {
         queryBuilder.andWhere(`post.tags LIKE :tag${index}`, {
@@ -66,7 +67,6 @@ export class PostsService {
     if (!post.title || !post.content) {
       throw new BadRequestException("Title and content are required");
     }
-
     const newPost = this.postsRepository.create(post);
     return this.postsRepository.save(newPost);
   }
@@ -89,5 +89,15 @@ export class PostsService {
     }
     await this.postsRepository.delete(id);
     return { id: id };
+  }
+
+  async addImage(images?: Express.Multer.File[]) {
+    if (!images) {
+      throw new BadRequestException("Images are required");
+    }
+    const imageUrls = await Promise.all(
+      images.map((image) => this.cloudinaryService.uploadImage(image)),
+    );
+    return imageUrls;
   }
 }

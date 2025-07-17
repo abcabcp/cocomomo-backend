@@ -18,14 +18,24 @@ export class CloudinaryService {
       );
     }
   }
-  async uploadImage(file: Express.Multer.File, folder = "post_thumbnails"): Promise<string> {
+  async uploadImage(file: Express.Multer.File, folder = "common"): Promise<string> {
     this.validateImageType(file);
 
+    const originalFilename = file.originalname.split(".").slice(0, -1).join(".");
+    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9]/g, "_");
+
     return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream({ folder }, (error, result) => {
-        if (error || !result) return reject(error);
-        resolve(result.secure_url);
-      });
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          public_id: sanitizedFilename,
+          overwrite: true,
+        },
+        (error, result) => {
+          if (error || !result) return reject(error);
+          resolve(result.secure_url);
+        },
+      );
 
       const buffer = Buffer.from(file.buffer);
       const readable = new Readable();
@@ -34,6 +44,13 @@ export class CloudinaryService {
       readable.push(null);
       readable.pipe(uploadStream);
     });
+  }
+  async uploadMultipleImages(files: Express.Multer.File[], folder = "common"): Promise<string[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException("이미지 파일이 필요합니다");
+    }
+
+    return Promise.all(files.map((file) => this.uploadImage(file, folder)));
   }
   async uploadContentImage(file: Express.Multer.File): Promise<string> {
     this.validateImageType(file);
