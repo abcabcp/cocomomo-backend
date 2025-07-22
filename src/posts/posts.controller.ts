@@ -29,7 +29,7 @@ import {
 import { ApiSuccessResponse } from "../common/decorators/api-swagger.decorator";
 import { User, UserRole } from "../users/entities/user.entity";
 import { CreatePostDto } from "./dto/create-post.dto";
-import { PostsResponseDto } from "./dto/find-all-posts.dto";
+import { PostsResponseDto, PostsTagsResponseDto } from "./dto/find-all-posts.dto";
 import { UpdatePostDto } from "./dto/update-post.dto";
 import { PostDto, PostRemoveResponseDto } from "./entities/post.entity";
 import { PostsService } from "./posts.service";
@@ -56,10 +56,19 @@ export class PostsController {
     @Query("tags") tags = "",
   ): Promise<PostsResponseDto> {
     const { list, totalCount } = await this.postsService.findAll(page, limit, searchTerm, tags);
+
     return {
       list,
       totalCount,
     };
+  }
+
+  @ApiOperation({ summary: "게시글 태그 조회" })
+  @ApiSuccessResponse(PostsTagsResponseDto)
+  @Get("/tags")
+  async findAllTags(): Promise<PostsTagsResponseDto> {
+    const tags = await this.postsService.getAllTags();
+    return { tags };
   }
 
   @ApiOperation({ summary: "게시글 상세 조회" })

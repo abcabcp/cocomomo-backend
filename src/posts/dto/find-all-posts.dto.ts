@@ -66,7 +66,7 @@ export class PostsResponseDto {
         title: { type: "string", example: "게시글 제목" },
         content: { type: "string", example: "게시글 내용" },
         thumbnailUrl: { type: "string", example: "https://example.com/image.jpg", nullable: true },
-        tags: { type: "array", items: { type: "string" }, example: "태그1,태그2" },
+        tags: { type: "array", items: { type: "string[]" }, example: ["태그1", "태그2"] },
         createdAt: { type: "string", format: "date-time" },
         updatedAt: { type: "string", format: "date-time" },
       },
@@ -80,6 +80,25 @@ export class PostsResponseDto {
     example: 100,
   })
   totalCount: number;
+}
+
+export class PostsTagsResponseDto {
+  @ApiProperty({
+    description: "전체 태그 목록 및 사용 횟수",
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        title: { type: "string", example: "react" },
+        count: { type: "number", example: 2 },
+      },
+    },
+    example: [
+      { title: "react", count: 2 },
+      { title: "javascript", count: 1 },
+    ],
+  })
+  tags?: { title: string; count: number }[];
 }
 
 export class PostsRequestDto {

@@ -31,7 +31,6 @@ export class PostDto {
     description: "게시글 태그 목록",
     example: "일상,여행,취미",
     required: false,
-    type: String,
   })
   @Column("simple-array", { nullable: true })
   tags: string[];

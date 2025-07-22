@@ -1,11 +1,9 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { User } from "../users/entities/user.entity";
 import { UsersService } from "../users/users.service";
 import { AuthStrategy } from "./auth.strategy";
 import { GithubStrategy } from "./github.strategy";
-
-import { AuthResponseDto } from "./dto/auth-response.dto";
 
 @Injectable()
 export class AuthService {
@@ -44,16 +42,36 @@ export class AuthService {
     };
   }
 
-  async refreshToken(
-    refresh_token: string,
-  ): Promise<{ accessToken: string; refreshToken: string; user: User }> {
-    const payload = this.jwtService.decode(refresh_token);
-    const user = await this.usersService.findById(payload.userId);
-    const accessToken = this.jwtService.sign({ userId: user.id, role: user.role });
-    const refreshToken = this.jwtService.sign(
-      { userId: user.id, role: user.role },
-      { expiresIn: "7d" },
-    );
-    return { accessToken, refreshToken, user };
+  async refreshToken({
+    platform,
+    refreshToken: refresh_token,
+  }: {
+    platform: string;
+    refreshToken: string;
+  }): Promise<{ accessToken: string; refreshToken: string; user: User }> {
+    const strategy = this.strategies[platform];
+    if (!strategy) throw new Error("Unsupported platform");
+
+    try {
+      const payload = this.jwtService.verify(refresh_token);
+      const user = await this.usersService.findById(payload.userId);
+
+      if (!user) {
+        throw new UnauthorizedException("유효하지 않은 사용자입니다.");
+      }
+
+      const newPayload = { userId: user.id, role: user.role };
+      const newAccessToken = this.jwtService.sign(newPayload);
+      const newRefreshToken = this.jwtService.sign(newPayload);
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user,
+      };
+    } catch (error) {
+      this.logger.error(`토큰 갱신 중 오류 발생: ${error.message}`);
+      throw new UnauthorizedException("토큰이 만료되었거나 유효하지 않습니다.");
+    }
   }
 }

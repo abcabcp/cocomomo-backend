@@ -9,7 +9,11 @@ import { User } from "./users/entities/user.entity";
 import { PostDto, PostRemoveResponseDto } from "./posts/entities/post.entity";
 import { Comment } from "./comments/entities/comment.entity";
 import { CommentRemoveResponseDto, CommentResponseDto } from "./comments/dto/comment-response.dto";
-import { PostsRequestDto, PostsResponseDto } from "./posts/dto/find-all-posts.dto";
+import {
+  PostsRequestDto,
+  PostsResponseDto,
+  PostsTagsResponseDto,
+} from "./posts/dto/find-all-posts.dto";
 import { UpdatePostDto } from "./posts/dto/update-post.dto";
 import {
   UploadImageDto,
@@ -18,6 +22,7 @@ import {
   UploadImagesRequestDto,
 } from "./utils/dto/upload-image.dto";
 import { DeleteImageDto } from "./utils/dto/delete-image.dto";
+import { AuthResponseDto } from "./auth/dto/auth-request.dto";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -70,12 +75,14 @@ async function bootstrap() {
       PostRemoveResponseDto,
       PostsResponseDto,
       PostsRequestDto,
+      PostsTagsResponseDto,
       UpdatePostDto,
       UploadImagesDto,
       UploadImageDto,
       UploadImageRequestDto,
       UploadImagesRequestDto,
       DeleteImageDto,
+      AuthResponseDto,
     ],
   });
 

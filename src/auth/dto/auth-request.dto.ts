@@ -25,3 +25,11 @@ export class LoginRequestDto {
   @ApiProperty({ enum: ["github"] })
   platform: string;
 }
+
+export class RefreshTokenRequestDto {
+  @ApiProperty({ enum: ["github"] })
+  platform: string;
+
+  @ApiProperty()
+  refreshToken: string;
+}

@@ -27,11 +27,17 @@ export class PostsService {
   ): Promise<PostsResponseDto> {
     const queryBuilder = this.postsRepository.createQueryBuilder("post");
     if (tags && tags.length > 0) {
-      tags.split(",").forEach((tag, index) => {
-        queryBuilder.andWhere(`post.tags LIKE :tag${index}`, {
-          [`tag${index}`]: `%${tag}%`,
-        });
-      });
+      const tagArray = tags.split(",");
+      queryBuilder.andWhere(
+        new Array(tagArray.length)
+          .fill("post.tags LIKE :tag")
+          .map((condition, index) => `${condition}${index}`)
+          .join(" OR "),
+        tagArray.reduce((params, tag, index) => {
+          params[`tag${index}`] = `%${tag}%`;
+          return params;
+        }, {}),
+      );
     }
 
     if (searchTerm) {
@@ -53,6 +59,31 @@ export class PostsService {
       list,
       totalCount,
     };
+  }
+
+  async getAllTags(): Promise<{ title: string; count: number }[]> {
+    const posts = await this.postsRepository.find();
+
+    const tagCountMap = new Map<string, number>();
+    const totalPostCount = posts.length;
+
+    tagCountMap.set("전체", totalPostCount);
+
+    for (const post of posts) {
+      if (post.tags && post.tags.length > 0) {
+        for (const tag of post.tags) {
+          const count = tagCountMap.get(tag) || 0;
+          tagCountMap.set(tag, count + 1);
+        }
+      }
+    }
+
+    const tagList = Array.from(tagCountMap.entries()).map(([title, count]) => ({
+      title,
+      count,
+    }));
+
+    return tagList.sort((a, b) => b.count - a.count);
   }
 
   async findOne(id: number): Promise<PostDto> {

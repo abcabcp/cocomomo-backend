@@ -7,7 +7,7 @@ import {
   ApiUnauthorizedDecorator,
 } from "src/common/decorators/api-responses.decorator";
 import { AuthService } from "./auth.service";
-import { LoginRequestDto } from "./dto/auth-request.dto";
+import { LoginRequestDto, RefreshTokenRequestDto } from "./dto/auth-request.dto";
 import { AuthResponseDto } from "./dto/auth-response.dto";
 import { ApiSuccessResponse } from "src/common/decorators/api-swagger.decorator";
 
@@ -34,11 +34,12 @@ export class AuthController {
 
   @Post("refresh")
   @ApiOperation({ summary: "액세스 토큰 갱신" })
-  @ApiOkResponseDecorator({ type: AuthResponseDto })
   @ApiUnauthorizedDecorator()
   @ApiBadRequestDecorator()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async refreshToken(@Headers("authorization") authHeader: string) {
-    return this.authService.refreshToken(authHeader);
+  @ApiBody({ type: RefreshTokenRequestDto })
+  @ApiSuccessResponse(AuthResponseDto)
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenRequestDto): Promise<AuthResponseDto> {
+    return this.authService.refreshToken(refreshTokenDto);
   }
 }
