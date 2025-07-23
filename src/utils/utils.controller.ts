@@ -1,8 +1,6 @@
 import {
-  BadRequestException,
   Controller,
   Delete,
-  Param,
   Post,
   Query,
   UploadedFile,
@@ -22,13 +20,15 @@ import {
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
+import { CloudinaryService } from "src/common/cloudinary/cloudinary.service";
 import {
-  ApiForbiddenDecorator,
-  ApiNotFoundDecorator,
-  ApiUnauthorizedDecorator,
+  ApiCommonErrorsDecorator,
+  ApiImageErrorsDecorator,
+  ApiSuccessResponse,
 } from "src/common/decorators/api-responses.decorator";
-import { ApiSuccessResponse } from "src/common/decorators/api-swagger.decorator";
+import { ImageUploadException } from "src/common/exceptions/image-upload.exception";
 import { UserRole } from "src/users/entities/user.entity";
+import { DeleteImageDto } from "./dto/delete-image.dto";
 import {
   UploadImageDto,
   UploadImageRequestDto,
@@ -36,8 +36,6 @@ import {
   UploadImagesRequestDto,
 } from "./dto/upload-image.dto";
 import { UtilsService } from "./utils.service";
-import { DeleteImageDto } from "./dto/delete-image.dto";
-import { CloudinaryService } from "src/common/cloudinary/cloudinary.service";
 
 @ApiTags("utils")
 @Controller("utils")
@@ -49,11 +47,11 @@ export class UtilsController {
     private readonly utilsService: UtilsService,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
+
   @ApiOperation({ summary: "이미지들 등록" })
   @ApiSuccessResponse(UploadImagesDto)
-  @ApiNotFoundDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
+  @ApiImageErrorsDecorator()
   @ApiSecurity("access-token")
   @ApiConsumes("multipart/form-data")
   @ApiQuery({ name: "folder", required: false, type: String })
@@ -65,16 +63,30 @@ export class UtilsController {
     @Query("folder") folder?: string,
   ) {
     if (!images || images.length === 0) {
-      throw new BadRequestException("이미지 파일이 필요합니다");
+      throw ImageUploadException.imageRequired();
     }
-    return this.utilsService.addImages(images, folder);
+
+    try {
+      return await this.utilsService.addImages(images, folder);
+    } catch (error) {
+      if (error instanceof ImageUploadException) {
+        throw error;
+      }
+
+      if (error.message?.includes("mimetype") || error.message?.includes("svg")) {
+        throw ImageUploadException.unsupportedFormat();
+      }
+      if (error.message?.includes("size")) {
+        throw ImageUploadException.tooLarge();
+      }
+      throw ImageUploadException.uploadFailed(error.message);
+    }
   }
 
   @ApiOperation({ summary: "단건 이미지 등록" })
   @ApiSuccessResponse(UploadImageDto)
-  @ApiNotFoundDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
+  @ApiImageErrorsDecorator()
   @ApiSecurity("access-token")
   @ApiConsumes("multipart/form-data")
   @ApiQuery({ name: "folder", required: false, type: String })
@@ -85,26 +97,40 @@ export class UtilsController {
   @UseInterceptors(FileInterceptor("image"))
   async addImage(@UploadedFile() image?: Express.Multer.File, @Query("folder") folder?: string) {
     if (!image) {
-      throw new BadRequestException("이미지 파일이 필요합니다");
+      throw ImageUploadException.imageRequired();
     }
-    return this.utilsService.addImage(image, folder);
+
+    try {
+      return await this.utilsService.addImage(image, folder);
+    } catch (error) {
+      if (error instanceof ImageUploadException) {
+        throw error;
+      }
+
+      if (error.message?.includes("mimetype") || error.message?.includes("svg")) {
+        throw ImageUploadException.unsupportedFormat();
+      }
+      if (error.message?.includes("size")) {
+        throw ImageUploadException.tooLarge();
+      }
+      throw ImageUploadException.uploadFailed(error.message);
+    }
   }
 
   @ApiOperation({ summary: "이미지 삭제" })
   @ApiSuccessResponse(DeleteImageDto)
-  @ApiNotFoundDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
+  @ApiImageErrorsDecorator()
   @ApiSecurity("access-token")
   @Delete("/image")
   async deleteImageByUrl(@Query("imageUrl") imageUrl: string) {
     if (!imageUrl) {
-      throw new BadRequestException("이미지 URL이 필요합니다");
+      throw ImageUploadException.imageRequired();
     }
 
     const publicId = this.cloudinaryService.extractPublicId(imageUrl);
     if (!publicId) {
-      throw new BadRequestException("유효하지 않은 Cloudinary 이미지 URL입니다");
+      throw ImageUploadException.uploadFailed("유효하지 않은 Cloudinary 이미지 URL입니다");
     }
     await this.cloudinaryService.deleteImage(publicId);
     return { imageUrl };

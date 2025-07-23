@@ -1,45 +1,66 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from "@nestjs/common";
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from "@nestjs/common";
 import { Request, Response } from "express";
 import { ApiErrorDto } from "../dto/api-error.dto";
+import { ERROR_MESSAGES, ERROR_CODES, ERROR_KEYS } from "../constants/error-codes.constants";
+import { AppException } from "../exceptions/app.exception";
 
-@Catch(HttpException)
+@Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
+  catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
-    const exceptionResponse = exception.getResponse();
+
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let errorMessage = "서버 내부 오류가 발생했습니다";
+
+    if (exception instanceof AppException) {
+      status = exception.getStatus();
+      errorMessage = exception.message;
+    } else if (exception instanceof HttpException) {
+      const exceptionResponse = exception.getResponse();
+      status = exception.getStatus();
+
+      if (typeof exceptionResponse === "string") {
+        errorMessage = exceptionResponse;
+      } else if (typeof exceptionResponse === "object" && exceptionResponse !== null) {
+        const res = exceptionResponse as Record<string, unknown>;
+
+        if (typeof res.message === "string") {
+          errorMessage = res.message;
+        } else if (Array.isArray(res.message)) {
+          errorMessage = res.message.join(", ");
+        }
+      }
+    } else {
+      const customException = exception as unknown as { statusCode: number; data: string };
+      if (customException.statusCode && customException.data) {
+        status = customException.statusCode;
+        errorMessage = customException.data;
+      } else {
+        errorMessage = ERROR_MESSAGES[ERROR_KEYS.IMAGE_UPLOAD_FAILED];
+        status = ERROR_CODES[ERROR_KEYS.IMAGE_UPLOAD_FAILED] as HttpStatus;
+      }
+    }
 
     const errorResponse: ApiErrorDto = {
       result: status,
-      message: this.getErrorMessage(exceptionResponse),
+      message: errorMessage,
       timestamp: new Date().toISOString(),
       path: request.url,
     };
 
     if (
-      typeof exceptionResponse === "object" &&
-      exceptionResponse !== null &&
-      "errors" in exceptionResponse
+      exception instanceof HttpException &&
+      typeof exception.getResponse() === "object" &&
+      exception.getResponse() !== null
     ) {
-      const errors = exceptionResponse.errors;
-      if (this.isValidErrorsObject(errors)) {
-        errorResponse.errors = errors;
+      const res = exception.getResponse() as Record<string, unknown>;
+      if ("errors" in res && this.isValidErrorsObject(res.errors)) {
+        errorResponse.errors = res.errors;
       }
     }
-
     response.status(status).json(errorResponse);
-  }
-
-  private getErrorMessage(response: unknown): string {
-    if (typeof response === "string") return response;
-    if (typeof response === "object" && response !== null) {
-      const res = response as Record<string, unknown>;
-      if (typeof res.message === "string") return res.message;
-      if (Array.isArray(res.message)) return res.message.join(", ");
-    }
-    return "오류가 발생했습니다";
   }
 
   private isValidErrorsObject(obj: unknown): obj is Record<string, string[]> {

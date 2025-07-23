@@ -1,82 +1,83 @@
 import { applyDecorators } from "@nestjs/common";
-import { ApiResponse } from "@nestjs/swagger";
-import { ApiErrorDto } from "../dto/api-error.dto";
+import { ApiOkResponse, ApiResponse, getSchemaPath } from "@nestjs/swagger";
+import { ERROR_CODES, ERROR_KEYS, ERROR_MESSAGES } from "../constants/error-codes.constants";
 
-const HTTP_STATUS = {
-  OK: 200,
-  CREATED: 201,
-  NO_CONTENT: 204,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-};
-
-export function ApiOkResponseDecorator(options: { type?: any; isArray?: boolean } = {}) {
+export function ApiSuccessResponse(model: any) {
   return applyDecorators(
-    ApiResponse({
-      status: HTTP_STATUS.OK,
-      description: "요청이 성공적으로 처리되었습니다",
-      ...options,
+    ApiOkResponse({
+      schema: {
+        allOf: [
+          {
+            properties: {
+              statusCode: { type: "number", example: 200 },
+              success: { type: "boolean", example: true },
+              data: { $ref: getSchemaPath(model) },
+              timestamp: { type: "string", format: "date-time" },
+            },
+          },
+        ],
+      },
     }),
   );
 }
 
-export function ApiCreatedResponseDecorator(options: { type?: any } = {}) {
+export function ApiBadRequestDecorator(description = ERROR_MESSAGES[ERROR_KEYS.BAD_REQUEST]) {
   return applyDecorators(
     ApiResponse({
-      status: HTTP_STATUS.CREATED,
-      description: "리소스가 성공적으로 생성되었습니다",
-      ...options,
-    }),
-  );
-}
-
-export function ApiNoContentResponseDecorator() {
-  return applyDecorators(
-    ApiResponse({
-      status: HTTP_STATUS.NO_CONTENT,
-      description: "처리가 완료되었습니다",
-    }),
-  );
-}
-
-export function ApiBadRequestDecorator(description = "잘못된 요청입니다") {
-  return applyDecorators(
-    ApiResponse({
-      status: HTTP_STATUS.BAD_REQUEST,
+      status: ERROR_CODES[ERROR_KEYS.BAD_REQUEST],
       description,
-      type: ApiErrorDto,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.BAD_REQUEST] },
+          message: { type: "string", example: description },
+          timestamp: { type: "string", example: new Date().toISOString() },
+        },
+      },
     }),
   );
 }
 
-export function ApiUnauthorizedDecorator(description = "인증에 실패했습니다") {
+export function ApiUnauthorizedDecorator(description = ERROR_MESSAGES[ERROR_KEYS.UNAUTHORIZED]) {
   return applyDecorators(
     ApiResponse({
-      status: HTTP_STATUS.UNAUTHORIZED,
+      status: ERROR_CODES[ERROR_KEYS.UNAUTHORIZED],
       description,
-      type: ApiErrorDto,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.UNAUTHORIZED] },
+          message: { type: "string", example: description },
+        },
+      },
     }),
   );
 }
 
-export function ApiForbiddenDecorator(description = "권한이 없습니다") {
+export function ApiForbiddenDecorator(description = ERROR_MESSAGES[ERROR_KEYS.FORBIDDEN]) {
   return applyDecorators(
     ApiResponse({
-      status: HTTP_STATUS.FORBIDDEN,
+      status: ERROR_CODES[ERROR_KEYS.FORBIDDEN],
       description,
-      type: ApiErrorDto,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.FORBIDDEN] },
+          message: { type: "string", example: description },
+        },
+      },
     }),
   );
 }
 
-export function ApiNotFoundDecorator(description = "리소스를 찾을 수 없습니다") {
+export function ApiNotFoundDecorator(description = ERROR_MESSAGES[ERROR_KEYS.NOT_FOUND]) {
   return applyDecorators(
     ApiResponse({
-      status: HTTP_STATUS.NOT_FOUND,
+      status: ERROR_CODES[ERROR_KEYS.NOT_FOUND],
       description,
-      type: ApiErrorDto,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.NOT_FOUND] },
+          message: { type: "string", example: description },
+        },
+      },
     }),
   );
 }
@@ -86,5 +87,102 @@ export function ApiCommonErrorsDecorator() {
     ApiBadRequestDecorator(),
     ApiUnauthorizedDecorator(),
     ApiForbiddenDecorator(),
+    ApiNotFoundDecorator(),
   );
 }
+
+export function ApiImageUploadErrorDecorator(
+  description = ERROR_MESSAGES[ERROR_KEYS.IMAGE_UPLOAD_FAILED],
+) {
+  return applyDecorators(
+    ApiResponse({
+      status: ERROR_CODES[ERROR_KEYS.IMAGE_UPLOAD_FAILED],
+      description,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.IMAGE_UPLOAD_FAILED] },
+          message: { type: "string", example: description },
+        },
+      },
+    }),
+  );
+}
+
+export function ApiUnsupportedImageFormatDecorator(
+  description = ERROR_MESSAGES[ERROR_KEYS.UNSUPPORTED_IMAGE_FORMAT],
+) {
+  return applyDecorators(
+    ApiResponse({
+      status: ERROR_CODES[ERROR_KEYS.UNSUPPORTED_IMAGE_FORMAT],
+      description,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.UNSUPPORTED_IMAGE_FORMAT] },
+          message: { type: "string", example: description },
+        },
+      },
+    }),
+  );
+}
+
+export function ApiImageTooLargeDecorator(
+  description = ERROR_MESSAGES[ERROR_KEYS.IMAGE_TOO_LARGE],
+) {
+  return applyDecorators(
+    ApiResponse({
+      status: ERROR_CODES[ERROR_KEYS.IMAGE_TOO_LARGE],
+      description,
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.IMAGE_TOO_LARGE] },
+          message: { type: "string", example: description },
+        },
+      },
+    }),
+  );
+}
+
+export function ApiImageErrorsDecorator() {
+  return applyDecorators(
+    ApiImageUploadErrorDecorator(),
+    ApiUnsupportedImageFormatDecorator(),
+    ApiImageTooLargeDecorator(),
+  );
+}
+
+export const ApiInvalidTagsDecorator = () => {
+  return applyDecorators(
+    ApiResponse({
+      status: ERROR_CODES[ERROR_KEYS.INVALID_TAGS],
+      description: ERROR_MESSAGES[ERROR_KEYS.INVALID_TAGS],
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.INVALID_TAGS] },
+          message: { type: "string", example: ERROR_MESSAGES[ERROR_KEYS.INVALID_TAGS] },
+        },
+      },
+    }),
+  );
+};
+
+export const ApiMissingRequiredFieldsDecorator = () => {
+  return applyDecorators(
+    ApiResponse({
+      status: ERROR_CODES[ERROR_KEYS.MISSING_REQUIRED_FIELDS],
+      description: ERROR_MESSAGES[ERROR_KEYS.MISSING_REQUIRED_FIELDS],
+      schema: {
+        properties: {
+          result: { type: "number", example: ERROR_CODES[ERROR_KEYS.MISSING_REQUIRED_FIELDS] },
+          message: {
+            type: "string",
+            example: ERROR_MESSAGES[ERROR_KEYS.MISSING_REQUIRED_FIELDS],
+          },
+        },
+      },
+    }),
+  );
+};
+
+export const ApiPostErrorsDecorator = () => {
+  return applyDecorators(ApiInvalidTagsDecorator(), ApiMissingRequiredFieldsDecorator());
+};

@@ -1,21 +1,35 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { CloudinaryService } from "src/common/cloudinary/cloudinary.service";
+import { Injectable } from "@nestjs/common";
+import { ALLOWED_IMAGE_TYPES, CloudinaryService } from "src/common/cloudinary/cloudinary.service";
+import { ImageUploadException } from "src/common/exceptions/image-upload.exception";
 
 @Injectable()
 export class UtilsService {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
+
   async addImage(image?: Express.Multer.File, folder?: string) {
     if (!image) {
-      throw new BadRequestException("Image is required");
+      throw ImageUploadException.imageRequired();
     }
+
+    if (!ALLOWED_IMAGE_TYPES.includes(image.mimetype)) {
+      throw ImageUploadException.unsupportedFormat();
+    }
+
     const imageUrl = await this.cloudinaryService.uploadImage(image, folder);
     return { imageUrl };
   }
 
   async addImages(images?: Express.Multer.File[], folder?: string) {
-    if (!images) {
-      throw new BadRequestException("Images are required");
+    if (!images || images.length === 0) {
+      throw ImageUploadException.imageRequired();
     }
+
+    for (const image of images) {
+      if (!ALLOWED_IMAGE_TYPES.includes(image.mimetype)) {
+        throw ImageUploadException.unsupportedFormat();
+      }
+    }
+
     const imageUrls = await Promise.all(
       images.map((image) => this.cloudinaryService.uploadImage(image, folder)),
     );

@@ -4,12 +4,10 @@ import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import {
-  ApiBadRequestDecorator,
-  ApiForbiddenDecorator,
-  ApiNotFoundDecorator,
+  ApiCommonErrorsDecorator,
+  ApiSuccessResponse,
   ApiUnauthorizedDecorator,
 } from "../common/decorators/api-responses.decorator";
-import { ApiSuccessResponse } from "../common/decorators/api-swagger.decorator";
 import { User, UserRole } from "../users/entities/user.entity";
 import { CommentsService } from "./comments.service";
 import { CommentRemoveResponseDto, CommentResponseDto } from "./dto/comment-response.dto";
@@ -24,7 +22,8 @@ export class CommentsController {
   @ApiOperation({ summary: "게시글 댓글 목록 조회" })
   @ApiParam({ name: "postId", type: "number" })
   @ApiSuccessResponse(CommentResponseDto)
-  @ApiNotFoundDecorator()
+  @ApiCommonErrorsDecorator()
+  @ApiCommonErrorsDecorator()
   @Get("post/:postId")
   async getCommentsByPostId(@Param("postId") postId: string) {
     const comments = await this.commentsService.findAllByPostId(+postId);
@@ -34,10 +33,7 @@ export class CommentsController {
   @ApiOperation({ summary: "댓글 작성" })
   @ApiParam({ name: "postId", type: "number" })
   @ApiSuccessResponse(CommentResponseDto)
-  @ApiBadRequestDecorator()
-  @ApiNotFoundDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
   @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
@@ -58,10 +54,8 @@ export class CommentsController {
   @ApiOperation({ summary: "댓글 수정" })
   @ApiParam({ name: "id", type: "number" })
   @ApiSuccessResponse(CommentResponseDto)
-  @ApiBadRequestDecorator()
-  @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
   @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
@@ -78,9 +72,8 @@ export class CommentsController {
   @ApiOperation({ summary: "댓글 삭제" })
   @ApiParam({ name: "id", type: "number" })
   @ApiSuccessResponse(CommentRemoveResponseDto)
-  @ApiNotFoundDecorator()
   @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
   @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)

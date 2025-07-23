@@ -8,7 +8,6 @@ import {
   Put,
   Query,
   Req,
-  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -21,12 +20,11 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { CloudinaryService } from "../common/cloudinary/cloudinary.service";
 import {
-  ApiBadRequestDecorator,
-  ApiForbiddenDecorator,
-  ApiNotFoundDecorator,
-  ApiUnauthorizedDecorator,
+  ApiCommonErrorsDecorator,
+  ApiPostErrorsDecorator,
+  ApiSuccessResponse,
 } from "../common/decorators/api-responses.decorator";
-import { ApiSuccessResponse } from "../common/decorators/api-swagger.decorator";
+import { PostException } from "../common/exceptions/post.exception";
 import { User, UserRole } from "../users/entities/user.entity";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { PostsResponseDto, PostsTagsResponseDto } from "./dto/find-all-posts.dto";
@@ -73,7 +71,7 @@ export class PostsController {
 
   @ApiOperation({ summary: "게시글 상세 조회" })
   @ApiSuccessResponse(PostDto)
-  @ApiNotFoundDecorator()
+  @ApiCommonErrorsDecorator()
   @Get(":id")
   async findOne(@Param("id") id: string) {
     return this.postsService.findOne(+id);
@@ -81,9 +79,8 @@ export class PostsController {
 
   @ApiOperation({ summary: "게시글 생성" })
   @ApiSuccessResponse(PostDto)
-  @ApiBadRequestDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
+  @ApiPostErrorsDecorator()
   @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -96,7 +93,7 @@ export class PostsController {
     @UploadedFile() thumbnail?: Express.Multer.File,
   ): Promise<PostDto> {
     if (!req.user?.id) {
-      throw new UnauthorizedException("User not authenticated");
+      throw PostException.unauthorized();
     }
 
     let thumbnailUrl: string | undefined;
@@ -112,10 +109,8 @@ export class PostsController {
 
   @ApiOperation({ summary: "게시글 수정" })
   @ApiSuccessResponse(PostDto)
-  @ApiBadRequestDecorator()
-  @ApiNotFoundDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiPostErrorsDecorator()
+  @ApiCommonErrorsDecorator()
   @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -140,9 +135,7 @@ export class PostsController {
 
   @ApiOperation({ summary: "게시글 삭제" })
   @ApiSuccessResponse(PostRemoveResponseDto)
-  @ApiNotFoundDecorator()
-  @ApiUnauthorizedDecorator()
-  @ApiForbiddenDecorator()
+  @ApiCommonErrorsDecorator()
   @ApiSecurity("access-token")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

@@ -1,15 +1,12 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { PostDto, PostRemoveResponseDto } from "./entities/post.entity";
 import { User, UserRole } from "src/users/entities/user.entity";
 import { PostsResponseDto } from "./dto/find-all-posts.dto";
 import { CloudinaryService } from "src/common/cloudinary/cloudinary.service";
+import { PostException } from "src/common/exceptions/post.exception";
+import { ImageUploadException } from "src/common/exceptions/image-upload.exception";
 
 @Injectable()
 export class PostsService {
@@ -27,17 +24,21 @@ export class PostsService {
   ): Promise<PostsResponseDto> {
     const queryBuilder = this.postsRepository.createQueryBuilder("post");
     if (tags && tags.length > 0) {
-      const tagArray = tags.split(",");
-      queryBuilder.andWhere(
-        new Array(tagArray.length)
-          .fill("post.tags LIKE :tag")
-          .map((condition, index) => `${condition}${index}`)
-          .join(" OR "),
-        tagArray.reduce((params, tag, index) => {
-          params[`tag${index}`] = `%${tag}%`;
-          return params;
-        }, {}),
-      );
+      try {
+        const tagArray = tags.split(",");
+        queryBuilder.andWhere(
+          new Array(tagArray.length)
+            .fill("post.tags LIKE :tag")
+            .map((condition, index) => `${condition}${index}`)
+            .join(" OR "),
+          tagArray.reduce((params, tag, index) => {
+            params[`tag${index}`] = `%${tag}%`;
+            return params;
+          }, {}),
+        );
+      } catch {
+        throw PostException.invalidTags();
+      }
     }
 
     if (searchTerm) {
@@ -89,14 +90,14 @@ export class PostsService {
   async findOne(id: number): Promise<PostDto> {
     const post = await this.postsRepository.findOne({ where: { id } });
     if (!post) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
+      throw PostException.notFound(id);
     }
     return post;
   }
 
   async create(post: Partial<PostDto>): Promise<PostDto> {
     if (!post.title || !post.content) {
-      throw new BadRequestException("Title and content are required");
+      throw PostException.missingRequiredFields();
     }
     const newPost = this.postsRepository.create(post);
     return this.postsRepository.save(newPost);
@@ -104,7 +105,7 @@ export class PostsService {
 
   async update(id: number, post: Partial<PostDto>): Promise<PostDto> {
     if (!post.title || !post.content) {
-      throw new BadRequestException("Title and content are required");
+      throw PostException.missingRequiredFields();
     }
 
     const existingPost = await this.findOne(id);
@@ -116,19 +117,29 @@ export class PostsService {
 
   async remove(id: number, currentUser: User): Promise<PostRemoveResponseDto> {
     if (currentUser.role !== UserRole.ADMIN) {
-      throw new ForbiddenException("관리자만 게시글을 삭제할 수 있습니다.");
+      throw PostException.forbidden();
     }
+
+    await this.findOne(id);
     await this.postsRepository.delete(id);
     return { id: id };
   }
 
   async addImage(images?: Express.Multer.File[]) {
     if (!images) {
-      throw new BadRequestException("Images are required");
+      throw ImageUploadException.imageRequired();
     }
-    const imageUrls = await Promise.all(
-      images.map((image) => this.cloudinaryService.uploadImage(image)),
-    );
-    return imageUrls;
+
+    try {
+      const imageUrls = await Promise.all(
+        images.map((image) => this.cloudinaryService.uploadImage(image)),
+      );
+      return imageUrls;
+    } catch (error) {
+      if (error instanceof ImageUploadException) {
+        throw error;
+      }
+      throw ImageUploadException.uploadFailed(error.message);
+    }
   }
 }
