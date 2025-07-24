@@ -13,8 +13,11 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-          ssh-known-hosts: ${{ secrets.OCI_INSTANCE_IP }}
-
+      - name: Setup SSH known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.OCI_INSTANCE_IP }} $(ssh-keyscan -t rsa ${{ secrets.OCI_INSTANCE_IP }} 2>/dev/null)" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
       - name: Run Deployment
         env:
           SERVER_IP: ${{ secrets.OCI_INSTANCE_IP }}
@@ -23,8 +26,7 @@ jobs:
             echo "Error: OCI_INSTANCE_IP is not set in GitHub Secrets"
             exit 1
           fi
-          
-          ssh -o StrictHostKeyChecking=no opc@$SERVER_IP << 'DEPLOY'
+          ssh opc@$SERVER_IP << 'DEPLOY'
           cd /home/opc/cocomomo-backend
           git pull origin main
           pnpm install
@@ -35,6 +37,5 @@ jobs:
           else
             pm2 start dist/main.js --name cocomomo-backend --max-memory-restart 300M
           fi
-          
           pm2 save
           DEPLOY
