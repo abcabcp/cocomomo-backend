@@ -14,11 +14,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
 
-      - name: Add Known Hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.OCI_INSTANCE_IP }} >> ~/.ssh/known_hosts
-
       - name: Run Deployment
         env:
           SERVER_IP: ${{ secrets.OCI_INSTANCE_IP }}
@@ -28,7 +23,7 @@ jobs:
             exit 1
           fi
           
-          ssh opc@$SERVER_IP << 'DEPLOY'
+          ssh -o StrictHostKeyChecking=no opc@$SERVER_IP << 'DEPLOY'
           cd /home/opc/cocomomo-backend
           git pull origin main
           pnpm install
