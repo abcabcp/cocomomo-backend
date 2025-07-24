@@ -20,11 +20,11 @@ export class GithubStrategy implements AuthStrategy {
       id: profile.id,
       name: profile.name || profile.login,
       email: profile.email || `${profile.id}+github@example.com`,
-      image: profile.image,
+      image: profile.avatar_url,
       platformId: profile.id,
       role: profile.role,
-      createdAt: profile.createdAt,
-      updatedAt: profile.updatedAt,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
     };
   }
 
